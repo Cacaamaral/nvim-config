@@ -1,10 +1,8 @@
 -- debug.lua
 --
--- Shows how to use the DAP plugin to debug your code.
---
--- Primarily focused on configuring the debugger for Go, but can
--- be extended to other languages as well. That's why it's called
--- kickstart.nvim and not kitchen-sink.nvim ;)
+-- Generic DAP (Debug Adapter Protocol) setup. Add a language-specific adapter
+-- plugin (e.g. nvim-dap-go, nvim-dap-python) and list its debugger in
+-- `ensure_installed` below once you actually need to debug that language.
 
 vim.pack.add {
   'https://github.com/mfussenegger/nvim-dap',
@@ -12,7 +10,6 @@ vim.pack.add {
   'https://github.com/nvim-neotest/nvim-nio',
   'https://github.com/mason-org/mason.nvim',
   'https://github.com/jay-babu/mason-nvim-dap.nvim',
-  'https://github.com/leoluz/nvim-dap-go',
 }
 
 -- Basic debugging keymaps, feel free to change to your liking!
@@ -40,8 +37,7 @@ require('mason-nvim-dap').setup {
   -- You'll need to check that you have the required things installed
   -- online, please don't ask me how to install them :)
   ensure_installed = {
-    -- Update this to ensure that you have the debuggers for the langs you want
-    'delve',
+    -- Add debuggers here for the langs you want, e.g. 'delve' for Go
   },
 }
 
@@ -84,12 +80,3 @@ dapui.setup {
 dap.listeners.after.event_initialized['dapui_config'] = dapui.open
 dap.listeners.before.event_terminated['dapui_config'] = dapui.close
 dap.listeners.before.event_exited['dapui_config'] = dapui.close
-
--- Install golang specific config
-require('dap-go').setup {
-  delve = {
-    -- On Windows delve must be run attached or it crashes.
-    -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
-    detached = vim.fn.has 'win32' == 0,
-  },
-}

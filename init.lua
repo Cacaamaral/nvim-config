@@ -1027,7 +1027,7 @@ do
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug'
+  require 'kickstart.plugins.debug'
   -- require 'kickstart.plugins.indent_line'
   -- require 'kickstart.plugins.lint'
   -- require 'kickstart.plugins.autopairs'
@@ -1044,6 +1044,8 @@ do
   --
   -- If separate modules need a specific order, require them explicitly instead:
   require 'custom.plugins.colorscheme'
+  require 'custom.plugins.oil'
+  require 'custom.plugins.claude'
   -- require 'custom.plugins.ui'
   -- require 'custom.plugins.git'
 end
