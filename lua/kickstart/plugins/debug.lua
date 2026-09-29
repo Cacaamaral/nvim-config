@@ -37,7 +37,10 @@ require('mason-nvim-dap').setup {
   -- You'll need to check that you have the required things installed
   -- online, please don't ask me how to install them :)
   ensure_installed = {
-    -- Add debuggers here for the langs you want, e.g. 'delve' for Go
+    -- mason-nvim-dap uses its OWN adapter-name keys here, not raw mason
+    -- package names: 'python' maps internally to the `debugpy` package.
+    'python', -- Python (wired up in custom/plugins/debug-adapters.lua)
+    'codelldb', -- C/C++ (wired up in custom/plugins/debug-adapters.lua)
   },
 }
 

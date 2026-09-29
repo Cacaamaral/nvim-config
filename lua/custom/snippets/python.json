@@ -1,0 +1,114 @@
+{
+  "class": {
+    "prefix": "class",
+    "body": ["class ${1:ClassName}:", "\tdef __init__(self${2:, args}):", "\t\t${0:pass}"],
+    "description": "Basic class"
+  },
+  "dataclass": {
+    "prefix": "dataclass",
+    "body": ["from dataclasses import dataclass", "", "", "@dataclass", "class ${1:ClassName}:", "\t${2:field}: ${3:type}", "\t$0"],
+    "description": "@dataclass-decorated class"
+  },
+  "abstract": {
+    "prefix": "abstract",
+    "body": [
+      "from abc import ABC, abstractmethod",
+      "",
+      "",
+      "class ${1:ClassName}(ABC):",
+      "\t@abstractmethod",
+      "\tdef ${2:method_name}(self${3:, args}):",
+      "\t\t${0:raise NotImplementedError}"
+    ],
+    "description": "Abstract base class with an abstract method"
+  },
+  "singleton": {
+    "prefix": "singleton",
+    "body": [
+      "class ${1:ClassName}:",
+      "\t_instance = None",
+      "",
+      "\tdef __new__(cls, *args, **kwargs):",
+      "\t\tif cls._instance is None:",
+      "\t\t\tcls._instance = super().__new__(cls)",
+      "\t\treturn cls._instance",
+      "",
+      "\tdef __init__(self${2:, args}):",
+      "\t\t${0:pass}"
+    ],
+    "description": "Singleton via __new__"
+  },
+  "factory": {
+    "prefix": "factory",
+    "body": [
+      "class ${1:Product}Factory:",
+      "\t@staticmethod",
+      "\tdef create(kind: str) -> '${1:Product}':",
+      "\t\tif kind == '${2:variant}':",
+      "\t\t\treturn ${3:ConcreteProduct}()",
+      "\t\traise ValueError(f'Unknown kind: {kind}')",
+      "$0"
+    ],
+    "description": "Static factory method"
+  },
+  "observer": {
+    "prefix": "observer",
+    "body": [
+      "class ${1:Subject}:",
+      "\tdef __init__(self):",
+      "\t\tself._observers = []",
+      "",
+      "\tdef subscribe(self, observer):",
+      "\t\tself._observers.append(observer)",
+      "",
+      "\tdef unsubscribe(self, observer):",
+      "\t\tself._observers.remove(observer)",
+      "",
+      "\tdef notify(self, *args, **kwargs):",
+      "\t\tfor observer in self._observers:",
+      "\t\t\tobserver.update(*args, **kwargs)",
+      "$0"
+    ],
+    "description": "Observer/subject pair"
+  },
+  "strategy": {
+    "prefix": "strategy",
+    "body": [
+      "from abc import ABC, abstractmethod",
+      "",
+      "",
+      "class ${1:Strategy}(ABC):",
+      "\t@abstractmethod",
+      "\tdef execute(self, ${2:data}):",
+      "\t\traise NotImplementedError",
+      "",
+      "",
+      "class ${3:Context}:",
+      "\tdef __init__(self, strategy: ${1:Strategy}):",
+      "\t\tself._strategy = strategy",
+      "",
+      "\tdef run(self, ${2:data}):",
+      "\t\treturn self._strategy.execute(${2:data})",
+      "$0"
+    ],
+    "description": "Strategy interface + context"
+  },
+  "decorator": {
+    "prefix": "decorator",
+    "body": [
+      "import functools",
+      "",
+      "",
+      "def ${1:decorator_name}(func):",
+      "\t@functools.wraps(func)",
+      "\tdef wrapper(*args, **kwargs):",
+      "\t\t${2:# before}",
+      "\t\tresult = func(*args, **kwargs)",
+      "\t\t${3:# after}",
+      "\t\treturn result",
+      "\treturn wrapper",
+      "$0"
+    ],
+    "description": "Function decorator with functools.wraps"
+  }
+}

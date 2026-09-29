@@ -99,7 +99,11 @@ do
   vim.g.maplocalleader = ' '
 
   -- Set to true if you have a Nerd Font installed and selected in the terminal
-  vim.g.have_nerd_font = false
+  -- JetBrainsMono Nerd Font was installed to ~/.local/share/fonts this
+  -- session -- you still need to pick it as your TERMINAL EMULATOR's font
+  -- yourself (terminal preferences, not something this config can set); icons
+  -- will look wrong (boxes/tofu) until you do.
+  vim.g.have_nerd_font = true
 
   -- [[ Setting options ]]
   --  See `:help vim.o`
@@ -110,7 +114,7 @@ do
   vim.o.number = true
   -- You can also add relative line numbers, to help with jumping.
   --  Experiment for yourself to see if you like it!
-  -- vim.o.relativenumber = true
+  vim.o.relativenumber = true
 
   -- Enable mouse mode, can be useful for resizing splits for example!
   vim.o.mouse = 'a'
@@ -164,8 +168,15 @@ do
   -- Show which line your cursor is on
   vim.o.cursorline = true
 
-  -- Minimal number of screen lines to keep above and below the cursor.
-  vim.o.scrolloff = 10
+  -- Minimal number of screen lines/columns to keep above/below/left/right of the cursor.
+  vim.o.scrolloff = 8
+  vim.o.sidescrolloff = 8
+
+  -- Column guide at 160 chars (matches .stylua.toml column_width).
+  vim.o.colorcolumn = '160'
+
+  -- Command line stays a single line (Noice/etc. are intentionally not used).
+  vim.o.cmdheight = 1
 
   -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
   -- instead raise a dialog asking if you wish to save the current file(s)
@@ -233,6 +244,10 @@ do
   vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+
+  -- Keep the cursor centered after scrolling a half-page.
+  vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Scroll down and center' })
+  vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Scroll up and center' })
 
   -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
   -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
@@ -307,6 +322,15 @@ do
 
       if name == 'LuaSnip' then
         if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
+        return
+      end
+
+      if name == 'markdown-preview.nvim' then
+        -- Its own `mkdp#util#install()` tries to download a prebuilt binary
+        -- bundle first, which isn't guaranteed to succeed in every
+        -- environment; a plain `npm install` in `app/` is the older, more
+        -- reliably reproducible path and needs no extra logic here.
+        if vim.fn.executable 'npm' == 1 then run_build(name, { 'npm', 'install' }, ev.data.path .. '/app') end
         return
       end
 
@@ -660,6 +684,9 @@ do
   vim.pack.add { gh 'j-hui/fidget.nvim' }
   require('fidget').setup {}
 
+  -- JSON/YAML schema catalogue, used by the jsonls/yamlls settings below.
+  vim.pack.add { gh 'b0o/schemastore.nvim' }
+
   --  This function gets run when an LSP attaches to a particular buffer.
   --    That is to say, every time a new file is opened that is associated with
   --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
@@ -733,10 +760,51 @@ do
   --  See `:help lsp-config` for information about keys and how to configure
   ---@type table<string, vim.lsp.Config>
   local servers = {
-    clangd = {}, -- C/C++
+    -- `--fallback-style=Mozilla` only applies when no project .clang-format
+    -- is found; a project's own .clang-format always wins for clangd (see
+    -- `:help clangd-flags`). clangd has no flag to force a style regardless
+    -- of project config -- unlike conform's clang_format formatter (Section
+    -- 7), which now always uses `-style=Mozilla` unconditionally, per
+    -- explicit request. In practice conform (not clangd) is what actually
+    -- formats C/C++ here (`<leader>f`/format-on-save), so this fallback-only
+    -- distinction mostly affects clangd's on-type formatting, not the main
+    -- formatting path.
+    clangd = {
+      cmd = {
+        'clangd',
+        '--background-index',
+        '--clang-tidy',
+        '--completion-style=detailed',
+        '--all-scopes-completion',
+        '--header-insertion=iwyu',
+        '--fallback-style=Mozilla',
+      },
+    },
     pyright = {}, -- Python types
     ruff = {}, -- Python lint (and formatting, see conform.nvim below)
     ts_ls = {}, -- TypeScript/JavaScript, incl. React (tsx/jsx)
+    eslint = {
+      settings = {
+        workingDirectories = { mode = 'auto' },
+      },
+    },
+    jsonls = {
+      settings = {
+        json = {
+          schemas = require('schemastore').json.schemas(),
+          validate = { enable = true },
+        },
+      },
+    },
+    yamlls = {
+      settings = {
+        yaml = {
+          schemaStore = { enable = false, url = '' }, -- disabled so schemastore.nvim's catalogue (below) is the only source
+          schemas = require('schemastore').yaml.schemas(),
+        },
+      },
+    },
+    marksman = {}, -- Markdown
     -- gopls = {},
     --
     -- Some languages (like rust) have entire language plugins that can be useful:
@@ -828,10 +896,21 @@ do
   require('conform').setup {
     notify_on_error = false,
     format_on_save = function(bufnr)
-      -- You can specify filetypes to autoformat on save here:
       local enabled_filetypes = {
-        -- lua = true,
-        -- python = true,
+        lua = true,
+        javascript = true,
+        typescript = true,
+        javascriptreact = true,
+        typescriptreact = true,
+        json = true,
+        jsonc = true,
+        yaml = true,
+        css = true,
+        html = true,
+        markdown = true,
+        python = true,
+        c = true,
+        cpp = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -844,18 +923,43 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
-      -- rust = { 'rustfmt' },
-      -- Conform can also run multiple formatters sequentially
-      -- python = { "isort", "black" },
-      --
       -- You can use 'stop_after_first' to run the first available formatter from the list
       javascript = { 'prettierd', 'prettier', stop_after_first = true },
       typescript = { 'prettierd', 'prettier', stop_after_first = true },
       javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
       typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
-      python = { 'ruff_format' },
+      json = { 'prettierd', 'prettier', stop_after_first = true },
+      jsonc = { 'prettierd', 'prettier', stop_after_first = true },
+      yaml = { 'prettierd', 'prettier', stop_after_first = true },
+      css = { 'prettierd', 'prettier', stop_after_first = true },
+      html = { 'prettierd', 'prettier', stop_after_first = true },
+      markdown = { 'prettierd', 'prettier', stop_after_first = true },
+      -- Organize imports before formatting, per Ruff's own recommended order.
+      python = { 'ruff_organize_imports', 'ruff_format' },
       c = { 'clang_format' },
       cpp = { 'clang_format' },
+      lua = { 'stylua' },
+    },
+    formatters = {
+      clang_format = {
+        -- Always format C/C++ as Mozilla style, regardless of any project
+        -- .clang-format -- changed from "fallback only" per explicit request.
+        -- Stock Mozilla style breaks the return type onto its own line;
+        -- verified directly with `clang-format --dump-config -style=Mozilla`
+        -- that this needs BOTH `BreakAfterReturnType` (the current option)
+        -- AND the older `AlwaysBreakAfterDefinitionReturnType` (still
+        -- independently governs top-level *definitions* specifically) set to
+        -- `None` -- overriding only one of the two silently leaves
+        -- definitions still breaking. clangd's own `--fallback-style=Mozilla`
+        -- (Section 6) can't express this same override -- its
+        -- --fallback-style flag only accepts a named style, not inline
+        -- options -- so it still uses stock Mozilla; this only affects
+        -- clangd's on-type formatting, not the main formatting path (conform,
+        -- used here).
+        prepend_args = {
+          '-style={BasedOnStyle: Mozilla, BreakAfterReturnType: None, AlwaysBreakAfterDefinitionReturnType: None}',
+        },
+      },
     },
   }
 
@@ -906,7 +1010,7 @@ do
       -- <c-k>: Toggle signature help
       --
       -- See `:help blink-cmp-config-keymap` for defining your own keymap
-      preset = 'default',
+      preset = 'enter',
 
       -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
       --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -919,9 +1023,11 @@ do
     },
 
     completion = {
-      -- By default, you may press `<c-space>` to show the documentation.
-      -- Optionally, set `auto_show = true` to show the documentation after a delay.
-      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+      -- Show documentation automatically ~200ms after selecting a candidate.
+      documentation = { auto_show = true, auto_show_delay_ms = 200 },
+      -- Highlight (preselect) the first candidate without inserting it into the buffer.
+      list = { selection = { preselect = true, auto_insert = false } },
+      ghost_text = { enabled = true },
     },
 
     sources = {
@@ -959,8 +1065,24 @@ do
 
   -- Ensure basic parsers are installed
   local parsers = {
-    'bash', 'c', 'cpp', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc',
-    'javascript', 'typescript', 'tsx', 'python',
+    'bash',
+    'c',
+    'cpp',
+    'diff',
+    'html',
+    'lua',
+    'luadoc',
+    'markdown',
+    'markdown_inline',
+    'query',
+    'vim',
+    'vimdoc',
+    'javascript',
+    'typescript',
+    'tsx',
+    'python',
+    'json',
+    'yaml',
   }
   require('nvim-treesitter').install(parsers)
 
@@ -1044,10 +1166,30 @@ do
   --
   -- If separate modules need a specific order, require them explicitly instead:
   require 'custom.plugins.colorscheme'
+  require 'custom.plugins.slash-commands' -- after colorscheme, above, which it requires
+  require 'custom.plugins.tabline'
   require 'custom.plugins.oil'
+  require 'custom.plugins.snippets'
+  require 'custom.plugins.flash'
+  require 'custom.plugins.autotag'
+  require 'custom.plugins.textobjects'
+  require 'custom.plugins.inc-rename'
+  require 'custom.plugins.yanky'
+  require 'custom.plugins.harpoon'
+  require 'custom.plugins.project'
+  require 'custom.plugins.grug-far'
+  require 'custom.plugins.trouble'
+  require 'custom.plugins.lazygit'
+  require 'custom.plugins.persistence'
+  require 'custom.plugins.codesnap'
+  require 'custom.plugins.markdown'
+  require 'custom.plugins.venv-selector'
+  require 'custom.plugins.clangd-extensions'
+  require 'custom.plugins.debug-adapters' -- after kickstart.plugins.debug, above
+  require 'custom.plugins.neotest'
+  require 'custom.plugins.snacks' -- before claude.lua: claudecode.nvim's terminal provider
   require 'custom.plugins.claude'
-  -- require 'custom.plugins.ui'
-  -- require 'custom.plugins.git'
+  require 'custom.plugins.keymap-explorer' -- after telescope/which-key (Sections 4-5) and the plugins above, so their keymaps are discoverable
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`

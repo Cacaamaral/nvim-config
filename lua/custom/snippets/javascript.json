@@ -1,0 +1,88 @@
+{
+  "class": {
+    "prefix": "class",
+    "body": ["class ${1:ClassName} {", "\tconstructor(${2}) {", "\t\t$0", "\t}", "}"],
+    "description": "Basic class"
+  },
+  "singleton": {
+    "prefix": "singleton",
+    "body": [
+      "class ${1:ClassName} {",
+      "\tstatic #instance;",
+      "",
+      "\tconstructor(${2}) {",
+      "\t\tif (${1:ClassName}.#instance) return ${1:ClassName}.#instance;",
+      "\t\t${1:ClassName}.#instance = this;",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Singleton via a private static field"
+  },
+  "factory": {
+    "prefix": "factory",
+    "body": [
+      "class ${1:Product}Factory {",
+      "\tstatic create(kind) {",
+      "\t\tswitch (kind) {",
+      "\t\t\tcase '${2:variant}':",
+      "\t\t\t\treturn new ${3:ConcreteProduct}();",
+      "\t\t\tdefault:",
+      "\t\t\t\tthrow new Error(`Unknown kind: ${kind}`);",
+      "\t\t}",
+      "\t}",
+      "}"
+    ],
+    "description": "Static factory method"
+  },
+  "observer": {
+    "prefix": "observer",
+    "body": [
+      "class ${1:Subject} {",
+      "\tconstructor() {",
+      "\t\tthis.observers = [];",
+      "\t}",
+      "",
+      "\tsubscribe(observer) {",
+      "\t\tthis.observers.push(observer);",
+      "\t}",
+      "",
+      "\tnotify(${2:...args}) {",
+      "\t\tthis.observers.forEach((observer) => observer.update(${2:...args}));",
+      "\t}",
+      "}"
+    ],
+    "description": "Observer/subject pair"
+  },
+  "strategy": {
+    "prefix": "strategy",
+    "body": [
+      "class ${1:Context} {",
+      "\tconstructor(strategy) {",
+      "\t\tthis.strategy = strategy;",
+      "\t}",
+      "",
+      "\trun(${2:data}) {",
+      "\t\treturn this.strategy.execute(${2:data});",
+      "\t}",
+      "}",
+      "$0"
+    ],
+    "description": "Strategy context (strategy is any object with an execute() method)"
+  },
+  "decorator": {
+    "prefix": "decorator",
+    "body": [
+      "function ${1:decoratorName}(fn) {",
+      "\treturn function (...args) {",
+      "\t\t${2:// before}",
+      "\t\tconst result = fn.apply(this, args);",
+      "\t\t${3:// after}",
+      "\t\treturn result;",
+      "\t};",
+      "}",
+      "$0"
+    ],
+    "description": "Higher-order function decorator"
+  }
+}

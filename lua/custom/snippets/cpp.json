@@ -1,0 +1,139 @@
+{
+  "class": {
+    "prefix": "class",
+    "body": ["class ${1:ClassName} {", "public:", "\t${1:ClassName}(${2});", "\t~${1:ClassName}() = default;", "", "private:", "\t$0", "};"],
+    "description": "Basic class"
+  },
+  "interface": {
+    "prefix": "interface",
+    "body": [
+      "class ${1:IInterfaceName} {",
+      "public:",
+      "\tvirtual ~${1:IInterfaceName}() = default;",
+      "\tvirtual ${2:void} ${3:methodName}(${4}) = 0;",
+      "\t$0",
+      "};"
+    ],
+    "description": "Pure-virtual interface"
+  },
+  "singleton": {
+    "prefix": "singleton",
+    "body": [
+      "class ${1:ClassName} {",
+      "public:",
+      "\tstatic ${1:ClassName}& instance() {",
+      "\t\tstatic ${1:ClassName} instance;",
+      "\t\treturn instance;",
+      "\t}",
+      "",
+      "\t${1:ClassName}(const ${1:ClassName}&) = delete;",
+      "\t${1:ClassName}& operator=(const ${1:ClassName}&) = delete;",
+      "",
+      "private:",
+      "\t${1:ClassName}() = default;",
+      "\t$0",
+      "};"
+    ],
+    "description": "Meyers' singleton"
+  },
+  "factory": {
+    "prefix": "factory",
+    "body": [
+      "class ${1:Product}Factory {",
+      "public:",
+      "\tstatic std::unique_ptr<${1:Product}> create(const std::string& kind) {",
+      "\t\tif (kind == \"${2:variant}\") return std::make_unique<${3:ConcreteProduct}>();",
+      "\t\tthrow std::invalid_argument(\"Unknown kind: \" + kind);",
+      "\t}",
+      "\t$0",
+      "};"
+    ],
+    "description": "Static factory method returning unique_ptr"
+  },
+  "observer": {
+    "prefix": "observer",
+    "body": [
+      "class ${1:Observer} {",
+      "public:",
+      "\tvirtual ~${1:Observer}() = default;",
+      "\tvirtual void update(${2}) = 0;",
+      "};",
+      "",
+      "class ${3:Subject} {",
+      "public:",
+      "\tvoid subscribe(${1:Observer}* observer) { observers_.push_back(observer); }",
+      "\tvoid notify(${2}) {",
+      "\t\tfor (auto* observer : observers_) observer->update(${4});",
+      "\t}",
+      "",
+      "private:",
+      "\tstd::vector<${1:Observer}*> observers_;",
+      "\t$0",
+      "};"
+    ],
+    "description": "Observer interface + subject"
+  },
+  "strategy": {
+    "prefix": "strategy",
+    "body": [
+      "class ${1:Strategy} {",
+      "public:",
+      "\tvirtual ~${1:Strategy}() = default;",
+      "\tvirtual ${2:void} execute(${3}) = 0;",
+      "};",
+      "",
+      "class ${4:Context} {",
+      "public:",
+      "\texplicit ${4:Context}(std::unique_ptr<${1:Strategy}> strategy) : strategy_(std::move(strategy)) {}",
+      "\t${2:void} run(${3}) { return strategy_->execute(${5}); }",
+      "",
+      "private:",
+      "\tstd::unique_ptr<${1:Strategy}> strategy_;",
+      "\t$0",
+      "};"
+    ],
+    "description": "Strategy interface + context"
+  },
+  "decorator": {
+    "prefix": "decorator",
+    "body": [
+      "class ${1:IComponent} {",
+      "public:",
+      "\tvirtual ~${1:IComponent}() = default;",
+      "\tvirtual ${2:void} operation() = 0;",
+      "};",
+      "",
+      "class ${3:Decorator} : public ${1:IComponent} {",
+      "public:",
+      "\texplicit ${3:Decorator}(std::unique_ptr<${1:IComponent}> wrapped) : wrapped_(std::move(wrapped)) {}",
+      "",
+      "\t${2:void} operation() override {",
+      "\t\t${4:// before}",
+      "\t\twrapped_->operation();",
+      "\t\t${5:// after}",
+      "\t}",
+      "",
+      "private:",
+      "\tstd::unique_ptr<${1:IComponent}> wrapped_;",
+      "\t$0",
+      "};"
+    ],
+    "description": "Decorator pattern wrapping an interface"
+  },
+  "policyclass": {
+    "prefix": "policyclass",
+    "body": ["template <typename ${1:Policy}>", "class ${2:ClassName} : private ${1:Policy} {", "public:", "\t${0}", "};"],
+    "description": "Policy-based class parameterized by a policy type"
+  },
+  "policyhost": {
+    "prefix": "policyhost",
+    "body": [
+      "struct ${1:PolicyName} {",
+      "\tstatic ${2:void} ${3:action}(${4}) {",
+      "\t\t${0}",
+      "\t}",
+      "};"
+    ],
+    "description": "Policy host implementing a policy's static interface"
+  }
+}
